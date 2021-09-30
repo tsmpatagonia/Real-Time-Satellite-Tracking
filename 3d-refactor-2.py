@@ -34,6 +34,9 @@ window = pyglet.window.Window(700,700)
 keys = pyglet.window.key.KeyStateHandler()
 window.push_handlers(keys)
 
+batch = pyglet.graphics.Batch()
+
+
 gyration = []
 zoom = 100.0
 gyration.append([37.558098, -122.272084]) # latitude, longitude
@@ -44,6 +47,7 @@ class Satel:
 		self.ep    = ephem.readtle(name, line_1, line_2)
 		self.vlist = satel_vlist
 		self.label = pyglet.text.Label(self.ep.name, y=15, anchor_x="center", color=(255,255,255,200))
+		#self.circle   = pyglet.shapes.Circle(0, 0, 1, color=(245,120,76), batch=batch)
 		self.compute()
 	def compute(self):
 		self.ep.compute(datetime.datetime.utcnow())
@@ -54,6 +58,10 @@ class Satel:
 		self.x      = -cos(radians(self.lat)) * cos(radians(self.long)) * self.radius
 		self.y      = sin(radians(self.lat)) * self.radius
 		self.z      = cos(radians(self.lat)) * sin(radians(self.long)) * self.radius
+		self.radius_cober = (6378150+ 0)/1000000.0
+		self.x_cober      = -cos(radians(self.lat)) * cos(radians(self.long)) * self.radius_cober
+		self.y_cober      = sin(radians(self.lat)) * self.radius_cober
+		self.z_cober      = cos(radians(self.lat)) * sin(radians(self.long)) * self.radius_cober
 	def draw(self):
 		glLoadIdentity()
 		glTranslatef(0,0,-zoom+6.37815)    # axis rotate by earth's surface
@@ -71,8 +79,39 @@ class Satel:
 		glRotatef(-gyration[0][0], 1, 0, 0)
 		glRotatef(-gyration[1][1], 0, 0, 1)
 		glRotatef(-gyration[1][0], 1, 0, 0)
-		self.label.draw()
-		self.draw_line()
+		#self.label.draw()
+		#self.draw_line()
+	def draw_cobertura(self):
+		glLoadIdentity()
+		glTranslatef(0,0,-zoom+6.37815)    # axis rotate by earth's surface
+		glRotatef(gyration[1][0], 1, 0, 0) # x-axis rotation 
+		glRotatef(gyration[1][1], 0, 0, 1) # z-axis rotation 
+		glTranslatef(0,0,-6.37815)            # rotate by earth's center
+		glRotatef(gyration[0][0], 1, 0, 0)    # latitude rotation
+		glRotatef(90-gyration[0][1], 0, 1, 0) # longitude rotation
+		glTranslatef(self.x_cober,self.y_cober,self.z_cober)
+		glColor3f(0,1,0)
+		glScalef(zoom/100.0, zoom/100.0, zoom/100.0)
+		#self.vlist.draw(GL_TRIANGLE_STRIP)
+		#self.circle.opacity = 50
+		#self.circle.draw()
+		glScalef(1, 1, 1)
+		glRotatef(gyration[0][1]-90, 0, 1, 0)
+		glRotatef(-gyration[0][0], 1, 0, 0)
+		glRotatef(-gyration[1][1], 0, 0, 1)
+		glRotatef(-gyration[1][0], 1, 0, 0)
+		glPushMatrix()
+		#glTranslatef(0, 0, -200)
+		cylinder = gluNewQuadric()
+		gluQuadricNormals(cylinder, GLU_SMOOTH)
+		#glColor4i(245,120,76, 50)
+		gluCylinder(cylinder, 1, 0, self.z , 12, 12)
+		gluDeleteQuadric(cylinder)
+		glPopMatrix()
+
+		#self.label.draw()
+		#self.draw_line()
+
 	def draw_line(self):
 		verts = []
 		for x in range(-rang,rang):
@@ -137,13 +176,7 @@ def init():
 
 	# Reload All Satellites
 	global resource, satels
-	resource = [["NOAA Weather Satellites",	"noaa"],
-		["Space Stations", "stations"],
-		["GPS Operational", "gps-ops"],
-		["Intelsat Satellites", "intelsat"],
-		["Science Satellites", "science"],
-		["Miscellaneous Military", "military"],
-		["Last 30 Days' Launches", "tle-new"]]
+	resource = [["Globalstar", "globalstar"]]
 	name = resource[num][1]
 	# Online/Loacl source
 	if online:
@@ -162,7 +195,7 @@ def on_draw():
 	glMatrixMode(GL_PROJECTION)
 	draw_earth()
 	draw_satellites()
-	draw_info()
+	#draw_info()
 
 def draw_earth():
 	glLoadIdentity()
@@ -184,7 +217,8 @@ def draw_earth():
 	glDisable(GL_TEXTURE_2D)
 
 def draw_satellites():
-	for s in satels:
+	for s in satels:		
+		s.draw_cobertura()
 		s.draw()
 
 def draw_info():

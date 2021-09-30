@@ -16,17 +16,13 @@
 import ephem, datetime, math, urllib.request, urllib.parse, urllib.error
 from pyglet.gl import *
 
-resource = [["Space Stations",		"stations"],
-	["NOAA Weather Satellites",	"noaa"],
-	["GPS Operational", 		"gps-ops"],
-	["Intelsat Satellites", 	"intelsat"],
-	["Science Satellites", 		"science"],
-	["Miscellaneous Military",	"military"],
-	["Last 30 Days' Launches", 	"tle-new"]]
+resource = [["GlobalStar",		"globalstar"]]
 
 window   = pyglet.window.Window(1024,576)
 total    = 50
 interval = 20
+batch = pyglet.graphics.Batch()
+
 
 class Background:
 	def __init__(self, x,y, xoffset,yoffset, texturefile):
@@ -47,11 +43,13 @@ class Background:
 
 class Satellite:
 	def __init__(self, name, l1, l2, yoffset):
-		self.e        = ephem.readtle(name, l1, l2)
+		self.e        = ephem.readtle("GS", l1, l2)
 		self.vlist    = pyglet.graphics.vertex_list(4, ("v2f",[-1,1, -1,-1, 1,-1, 1,1]))
-		self.size     = 4
+		self.circle   = pyglet.shapes.Circle(0, 0, 1, color=(245,120,76), batch=batch)
+		self.size     = 3
 		self.showline = 0
 		self.yoffset  = yoffset
+		
 	def compute(self):
 		self.e.compute(datetime.datetime.utcnow())
 		self.long  = math.degrees(float(self.e.sublong))
@@ -63,19 +61,37 @@ class Satellite:
 		glEnable(GL_BLEND)
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 		glColor4f(1,0,0,1)
+		self.circle.opacity = 255
 		glPushMatrix()
 		glTranslatef(self.x, self.y, 0)
 		glRotatef(30, 0, 0, 1)
 		self.label.draw()
 		glScalef(self.size, self.size, self.size)
-		self.vlist.draw(GL_TRIANGLE_FAN)
+		#self.vlist.draw(GL_TRIANGLE_FAN)
+		self.circle.draw()
 		glPopMatrix()
 		glDisable(GL_TEXTURE_2D)
 		glDisable(GL_BLEND)
+	def draw_alpha(self):
+		glEnable(GL_BLEND)
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+		#glColor4f(.2,.7,.2,.5)
+		self.circle.opacity = 50
+		glPushMatrix()
+		glTranslatef(self.x, self.y, 0)
+		glRotatef(0, 0, 0, 0)
+		self.label.draw()
+		glScalef(40, 40, 40)
+		#self.vlist.draw(GL_TRIANGLE_FAN)
+		self.circle.draw()
+		glPopMatrix()
+		glDisable(GL_TEXTURE_2D)
+		glDisable(GL_BLEND)
+
 	def draw_line(self):
 		self.init_line()
 		glEnable(GL_BLEND)
-		glColor4f(1,0,0,self.showline)
+		glColor4f(.7,.7,.7,self.showline)
 		glPushMatrix()
 		for x in self.vline_list:
 			x.draw(GL_LINE_STRIP)
@@ -113,10 +129,12 @@ def init():
 	global text_current_set, text_current_time, text_infos, text_infos_2, text_infos_3
 	open_new_file(0)
 	category_num      = 0
-	background_map    = Background(1024,512,0,64,"assets/blue.jpg")
-	background_banner = Background(1024,128,0,0,"assets/bg.png")
-	text_current_set  = pyglet.text.Label("Satellites Category on Screen: " + resource[category_num][0], x=15, y=42, anchor_y="center", color=(255,255,255,200))
-	text_current_time = pyglet.text.Label("Current UTC Time: " + datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), x=15, y=22, anchor_y="center", color=(255,255,255,200))
+	#background_map    = Background(1024,512,0,64,"assets/blue.jpg")
+	#background_map    = Background(1024,512,0,64,"assets/bluer.jpg")
+	background_map    = Background(1024,512,0,64,"assets/map2_4096.png")
+	#background_banner = Background(1024,128,0,0,"assets/bg.png")
+	text_current_set  = pyglet.text.Label("Sats on Screen: " + resource[category_num][0], x=15, y=42, anchor_y="center", color=(255,255,255,200))
+	text_current_time = pyglet.text.Label("UTC Time: " + datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), x=15, y=22, anchor_y="center", color=(255,255,255,200))
 	text_infos        = pyglet.text.Label("Click a satellite to display its orbit, Press H to show/hide all orbits on-screen.", x=460, y=50, anchor_y="center", color=(255,255,255,200))
 	text_infos_2      = pyglet.text.Label("Press UP/DOWN to change satellite category.", x=460, y=32, anchor_y="center", color=(255,255,255,200))
 	text_infos_3      = pyglet.text.Label("Press LEFT/RIGHT to adjust orbit interval for line drawing.", x=460, y=14, anchor_y="center", color=(255,255,255,200))
@@ -125,7 +143,7 @@ def init():
 def on_draw():
 	glClear(GL_COLOR_BUFFER_BIT)
 	background_map.draw()
-	background_banner.draw()
+	#background_banner.draw()
 	text_current_set.draw()
 	text_current_time.draw()
 	text_infos.draw()
@@ -133,12 +151,13 @@ def on_draw():
 	text_infos_3.draw()
 	for x in sats:
 		x.draw()
+		x.draw_alpha()
 		x.draw_line()
 
 def update(dt):
 	global text_current_time, text_current_set
-	text_current_time = pyglet.text.Label("Current UTC Time: " + datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), x=15, y=22, anchor_y="center", color=(255,255,255,200))
-	text_current_set  = pyglet.text.Label("Satellites Category on Screen: " + resource[category_num][0], x=15, y=42, anchor_y="center", color=(255,255,255,200))
+	text_current_time = pyglet.text.Label("UTC Time: " + datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"), x=15, y=22, anchor_y="center", color=(255,255,255,200))
+	text_current_set  = pyglet.text.Label("Sats on Screen: " + resource[category_num][0], x=15, y=42, anchor_y="center", color=(255,255,255,200))
 	for x in sats:
 		x.compute()
 
