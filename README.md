@@ -1,4 +1,4 @@
-Real-Time-Satellite-Tracking
+Real-Time-Satellite-Tracking [GLOBALSTAR CONSTALATION]
 ============================
 
 Tracking satellites in real time form TLS data.  
@@ -19,7 +19,6 @@ How to control:
 
 - Click a satellite to display its orbit.
 - Press H to show/hide all orbits on-screen.
-- Press UP/DOWN to change satellite category.
 - Press LEFT/RIGHT to adjust orbit interval for line drawing.
 
 
@@ -65,18 +64,6 @@ Intelsat Satellites | intelsat.txt
 Science Satellites | science.txt
 Miscellaneous Military | military.txt
 Last 30 Days' Launches | tle-new.txt
-
-
-## Screen Shots
-![2D](Screenshots/Screen%20Shot%202014-12-13%20at%202.34.01%20PM.png)
-
-![NOAA](Screenshots/Screen%20Shot%202014-12-13%20at%202.53.53%20AM.png)
-
-![GPS](Screenshots/Screen%20Shot%202014-12-13%20at%202.56.56%20AM.png)
-
-![NOAA](Screenshots/Screen%20Shot%202014-12-13%20at%202.58.56%20AM.png)
-
-![AfriStar](Screenshots/Screen%20Shot%202014-12-13%20at%203.29.46%20AM.png)
 
 
 ## License
